@@ -1,0 +1,4 @@
+aiogram==3.28.2
+dotenv==0.9.9
+environs==15.0.1
+

@@ -3,6 +3,7 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
+from presentation.handlers.echo import echo_router
 
 # Импортируем нашу функцию загрузки конфига из папки core
 from core.config import Config, load_config
@@ -28,6 +29,7 @@ async def main():
     # 3. Инициализируем диспетчер (главный маршрутизатор бота)
     dp = Dispatcher(maintenance_mode=False)
 
+    dp.include_router(echo_router)
     # 4. Пропускаем старые апдейты, чтобы бот не отвечал на старые сообщения при запуске
     await bot.delete_webhook(drop_pending_updates=True)
 
