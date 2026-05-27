@@ -3,7 +3,10 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from adapters.bot_handlers.echo import echo_router
+from src.adapters.bot_handlers.note_handlers import router
+from src.application.use_cases import SaveNoteUseCase, GetUserNotesUseCase
+from src.infrastructure.memory_repo import InMemoryNoteRepository
+from src.infrastructure.middlewares import DIMiddleware
 
 # Импортируем нашу функцию загрузки конфига из папки core
 from infrastructure.config import Config, load_config
@@ -18,6 +21,13 @@ logger = logging.getLogger(__name__)
 async def main():
     logger.info('Starting bot')
 
+    # a. ИНФРАСТРУКТУРА: Создаем реальное хранилище
+    repo = InMemoryNoteRepository()
+
+    # b. APPLICATION: Собираем сценарии, отдавая им хранилище
+    save_note_uc = SaveNoteUseCase(repo)
+    get_notes_uc = GetUserNotesUseCase(repo)
+
     # 1. Загружаем конфиг из файла.env
     config: Config = load_config()
 
@@ -28,8 +38,9 @@ async def main():
     )
     # 3. Инициализируем диспетчер (главный маршрутизатор бота)
     dp = Dispatcher(maintenance_mode=False)
+    dp.update.middleware(DIMiddleware(repo))
+    dp.include_router(router)
 
-    dp.include_router(echo_router)
     # 4. Пропускаем старые апдейты, чтобы бот не отвечал на старые сообщения при запуске
     await bot.delete_webhook(drop_pending_updates=True)
 
