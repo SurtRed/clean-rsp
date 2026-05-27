@@ -1,5 +1,6 @@
 .venvt/
 .idea/
+.serena/
 .env
 diary.txt
 __pycache__/

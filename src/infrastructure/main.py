@@ -6,7 +6,7 @@ from aiogram.enums import ParseMode
 from presentation.handlers.echo import echo_router
 
 # Импортируем нашу функцию загрузки конфига из папки core
-from core.config import Config, load_config
+from domain.config import Config, load_config
 
 # Настраиваем логирование, чтобы видеть в консоли, что происходит
 logging.basicConfig(
