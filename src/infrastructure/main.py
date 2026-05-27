@@ -3,10 +3,10 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from presentation.handlers.echo import echo_router
+from adapters.bot_handlers.echo import echo_router
 
 # Импортируем нашу функцию загрузки конфига из папки core
-from domain.config import Config, load_config
+from infrastructure.config import Config, load_config
 
 # Настраиваем логирование, чтобы видеть в консоли, что происходит
 logging.basicConfig(
