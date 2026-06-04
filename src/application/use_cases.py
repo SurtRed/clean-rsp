@@ -13,7 +13,7 @@ class SaveNoteUseCase:
     def __init__(self, repo: NoteRepository):
         self.repo = repo
 
-    def execute(self, user_id: int, text: str) -> Note:
+    async def execute(self, user_id: int, text: str) -> Note:
         # 1. Создаем доменную сущность
         note = Note(
             id=0,  # Настоящий ID выдаст база
@@ -23,8 +23,7 @@ class SaveNoteUseCase:
         )
 
         # 2. Отправляем в хранилище через абстрактный интерфейс
-        self.repo.save(note)
-
+        await self.repo.save(note)
         return note
 
 
@@ -34,6 +33,26 @@ class GetUserNotesUseCase:
     def __init__(self, repo: NoteRepository):
         self.repo = repo
 
-    def execute(self, user_id: int) -> List[Note]:
+    async def execute(self, user_id: int) -> List[Note]:
         # Просто делегируем запрос хранилищу
-        return self.repo.get_by_user(user_id)
+        return await self.repo.get_by_user(user_id)
+
+
+class DeleteNoteUseCase:
+    """Сценарий: Удалить заметку"""
+
+    def __init__(self, repo: NoteRepository):
+        self.repo = repo
+
+    async def execute(self, note_id: int) -> None:
+        await self.repo.delete(note_id)
+
+
+class EditNoteUseCase:
+    """Сценарий: Изменить заметку"""
+
+    def __init__(self, repo: NoteRepository):
+        self.repo = repo
+
+    async def execute(self, note_id: int, new_text: str) -> None:
+        await self.repo.update(note_id, new_text)

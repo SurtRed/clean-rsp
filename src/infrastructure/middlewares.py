@@ -3,7 +3,7 @@ from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject
 
 from src.application.interfaces import NoteRepository
-from src.application.use_cases import SaveNoteUseCase, GetUserNotesUseCase
+from src.application.use_cases import SaveNoteUseCase, GetUserNotesUseCase, DeleteNoteUseCase, EditNoteUseCase
 
 
 class DIMiddleware(BaseMiddleware):
@@ -27,6 +27,8 @@ class DIMiddleware(BaseMiddleware):
 
         data["save_note_use_case"] = SaveNoteUseCase(self.repo)
         data["get_notes_use_case"] = GetUserNotesUseCase(self.repo)
+        data["delete_note_use_case"] = DeleteNoteUseCase(self.repo)
+        data["edit_note_use_case"] = EditNoteUseCase(self.repo)
 
         # 2. ПЕРЕДАЕМ УПРАВЛЕНИЕ: Отправляем апдейт дальше (в хендлер)
         # Хендлер получит всё, что мы только что положили в словарь `data`
