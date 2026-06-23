@@ -14,3 +14,4 @@ async def cmd_start(message: types.Message):
 async def cmd_help(message: types.Message):
     await message.answer(LEXICON["help"])
 
+

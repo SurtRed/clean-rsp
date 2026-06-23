@@ -1,0 +1,1841 @@
+This file is a merged representation of a subset of the codebase, containing files not matching ignore patterns, combined into a single document by Repomix.
+The content has been processed where comments have been removed, empty lines have been removed.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of a subset of the repository's contents that is considered the most important context.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching these patterns are excluded: .venv*, .venv, venv-3.14t, .idea, .git, __pycache__, *.pyc, *.xml, *.png, *.jpg, *.mp3, *.gif, *.bmp
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Code comments have been removed from supported file types
+- Empty lines have been removed from all files
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+.env.example
+.github/workflows/main.yml
+.gitignore
+BD/rooms.py
+BD/users.py
+config_data/config.py
+Filters/MyFilters.py
+handlers/game_handlers/sujefa/callback_handlers.py
+handlers/game_handlers/sujefa/commands_handlers.py
+handlers/game_handlers/sujefa/inline_mode_handlers/callback_handlers_inline_mode.py
+handlers/game_handlers/sujefa/inline_mode_handlers/inline_handlers.py
+handlers/game_handlers/sujefa/inline_mode_handlers/result_chosen_handler.py
+handlers/game_handlers/sujefa/message_handlers.py
+handlers/game_handlers/sujefa/other_handlers.py
+handlers/maintenance.py
+keyboards/inline_keyboard_buttons.py
+keyboards/inline_keyboards.py
+keyboards/keyboards.py
+keyboards/main_menu.py
+lexicon/lexicon_ru.py
+main.py
+middlewares/outer.py
+README.md
+services/db_tools/db_tools.py
+services/db_tools/rooms_tools.py
+services/db_tools/users_tools.py
+services/keyboard_builder.py
+services/middleware_tools.py
+services/tools.py
+text/logic.txt
+text/password
+text/update_example.txt
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path=".env.example">
+BOT_TOKEN=some_token
+ADMIN_IDS=173901673
+OTHER_IDS=124543434,143343455
+
+DATABASE=someDatabaseName
+DB_HOST=127.0.0.1
+DB_USER=dbUser
+DB_PASSWORD=dbPassword
+</file>
+
+<file path="BD/users.py">
+users_dict: dict[str, str | int | list | dict[str, str | dict[str, int]]] = {}
+db_users: dict[int, users_dict] = {}
+</file>
+
+<file path="handlers/game_handlers/sujefa/message_handlers.py">
+import logging
+from aiogram import Router, Bot, F
+from aiogram.types import Message
+from keyboards.inline_keyboards import kb_for_solo
+from aiogram.types import (
+    InputMediaPhoto,
+    )
+from lexicon.lexicon_ru import LEXICON_RU
+from BD.rooms import db_obj_rooms
+from services.db_tools.rooms_tools import Room
+from Filters.MyFilters import IsSelfBotChat, IsViaSelfBot
+router = Router()
+router.message.filter(
+    IsSelfBotChat()
+)
+logger = logging.getLogger(__name__)
+@router.message(IsViaSelfBot(), F.caption.startswith('Привет'))
+async def inline_self_bot_chat(message: Message, bot: Bot):
+    new_room = Room(str(message.chat.id)+str(message.message_id+1))
+    db_obj_rooms.update({new_room.room_id: new_room})
+    await bot.send_photo(
+        chat_id=message.chat.id,
+        photo="AgACAgIAAxkBAAIMRWayNOxIjIUPC--Tu9KpPpbobYqcAALv3zEbX6aRSWrufRy5Q_5IAQADAgADeAADNQQ",
+        caption=LEXICON_RU["/start"],
+        reply_markup=kb_for_solo
+    )
+    await bot.delete_message(
+        chat_id=message.chat.id,
+        message_id=message.message_id,
+    )
+</file>
+
+<file path="keyboards/main_menu.py">
+from aiogram import Bot
+from aiogram.types import BotCommand
+from lexicon.lexicon_ru import LEXICON_RU_COMMANDS
+async def set_main_menu(bot: Bot):
+    main_menu_commands = [BotCommand(
+        command=command,
+        description=description
+    ) for command,
+        description in LEXICON_RU_COMMANDS.items()]
+    await bot.set_my_commands(main_menu_commands)
+</file>
+
+<file path="services/keyboard_builder.py">
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+from lexicon.lexicon_ru import LEXICON_RU
+def create_inline_kb(width: int,
+                     *args: str,
+                     **kwargs: str) -> InlineKeyboardMarkup:
+    kb_builder = InlineKeyboardBuilder()
+    buttons: list[InlineKeyboardButton] = []
+    if args:
+        for button in args:
+            buttons.append(InlineKeyboardButton(
+                text=LEXICON_RU[button] if button in LEXICON_RU else button,
+                callback_data=button))
+    if kwargs:
+        for button, text in kwargs.items():
+            buttons.append(InlineKeyboardButton(
+                text=text,
+                callback_data=button))
+    kb_builder.row(*buttons, width=width)
+    return kb_builder.as_markup()
+</file>
+
+<file path="text/password">
+
+</file>
+
+<file path="config_data/config.py">
+from dataclasses import dataclass
+from environs import Env
+@dataclass
+class TgBot:
+    token: str
+@dataclass
+class Config:
+    tg_bot: TgBot
+def load_config(path: str | None = None) -> Config:
+    env = Env()
+    env.read_env(path)
+    return Config(tg_bot=TgBot(token=env('BOT_TOKEN')))
+</file>
+
+<file path="handlers/game_handlers/sujefa/commands_handlers.py">
+from aiogram import Router, Bot
+from aiogram.filters import Command, CommandStart
+from aiogram.types import Message
+from keyboards.inline_keyboards import  kb_for_solo, kb_for_duo
+from lexicon.lexicon_ru import LEXICON_RU
+from services.db_tools.rooms_tools import Room
+from BD.rooms import db_obj_rooms
+from Filters.MyFilters import IsSelfBotChat
+router = Router()
+@router.message(CommandStart(), IsSelfBotChat())
+async def process_start_in_self_bot_chat_command(message: Message, bot: Bot):
+    new_room = Room(str(message.chat.id)+str(message.message_id+1))
+    db_obj_rooms.update({new_room.room_id: new_room})
+    await bot.send_photo(
+        chat_id=message.chat.id,
+        photo="AgACAgIAAxkBAAIMRWayNOxIjIUPC--Tu9KpPpbobYqcAALv3zEbX6aRSWrufRy5Q_5IAQADAgADeAADNQQ",
+        caption=LEXICON_RU["/start"],
+        reply_markup=kb_for_solo
+    )
+@router.message(CommandStart())
+async def process_start_command(message: Message, bot: Bot):
+    new_room = Room(str(message.chat.id)+str(message.message_id+1))
+    db_obj_rooms.update({new_room.room_id: new_room})
+    await bot.send_photo(
+        chat_id=message.chat.id,
+        photo="AgACAgIAAxkBAAIMRWayNOxIjIUPC--Tu9KpPpbobYqcAALv3zEbX6aRSWrufRy5Q_5IAQADAgADeAADNQQ",
+        caption=LEXICON_RU["/start"],
+        reply_markup=kb_for_duo
+    )
+@router.message(Command(commands="help"), IsSelfBotChat())
+async def process_help_in_self_bot_chat_command(message: Message, bot: Bot):
+    new_room = Room(str(message.chat.id)+str(message.message_id+1))
+    db_obj_rooms.update({new_room.room_id: new_room})
+    await bot.send_photo(
+        chat_id=message.chat.id,
+        photo="AgACAgIAAxkBAAIMRWayNOxIjIUPC--Tu9KpPpbobYqcAALv3zEbX6aRSWrufRy5Q_5IAQADAgADeAADNQQ",
+        caption=LEXICON_RU["/help"],
+        reply_markup=kb_for_solo
+    )
+@router.message(Command(commands="help"))
+async def process_help_command(message: Message, bot: Bot):
+    new_room = Room(str(message.chat.id)+str(message.message_id+1))
+    db_obj_rooms.update({new_room.room_id: new_room})
+    await bot.send_photo(
+        chat_id=message.chat.id,
+        photo="AgACAgIAAxkBAAIMRWayNOxIjIUPC--Tu9KpPpbobYqcAALv3zEbX6aRSWrufRy5Q_5IAQADAgADeAADNQQ",
+        caption=LEXICON_RU["/help"],
+        reply_markup=kb_for_duo
+    )
+</file>
+
+<file path="handlers/game_handlers/sujefa/other_handlers.py">
+import logging
+from aiogram import Router
+from aiogram.types import Message
+from lexicon.lexicon_ru import LEXICON_RU
+from Filters.MyFilters import IsViaSelfBot
+router = Router()
+logger = logging.getLogger(__name__)
+@router.message(IsViaSelfBot())
+async def pass_answer(message: Message):
+    pass
+@router.message()
+async def process_unexpected_text(message: Message):
+    await message.answer(text=LEXICON_RU['other_answer'])
+</file>
+
+<file path="keyboards/inline_keyboard_buttons.py">
+from aiogram.types import InlineKeyboardButton, SwitchInlineQueryChosenChat
+from lexicon.lexicon_ru import LEXICON_RU
+switch_button_parameters = SwitchInlineQueryChosenChat(
+    query="new game",
+    allow_bot_chats=False,
+    allow_group_chats=True,
+    allow_user_chats=True,
+    allow_channel_chats=False
+)
+try_invite_again = InlineKeyboardButton(
+    text=LEXICON_RU['try_again_invite'],
+    switch_inline_query_current_chat='new game'
+)
+solo_but = InlineKeyboardButton(
+    text=LEXICON_RU['start_solo_btn'],
+    callback_data='start_solo'
+)
+duo_but = InlineKeyboardButton(
+    text=LEXICON_RU["start_duo_btn"],
+    callback_data="start_duo",
+)
+share_invite_but = InlineKeyboardButton(
+    text=LEXICON_RU['invite_sfriend_btn'],
+    switch_inline_query_chosen_chat=switch_button_parameters
+)
+accept_game = InlineKeyboardButton(
+    text=LEXICON_RU["accept_game_btn"],
+    callback_data="accept_game"
+)
+contact_me = InlineKeyboardButton(
+    text=LEXICON_RU['contact_btn'],
+    url='https://t.me/SurtRed'
+)
+rock = InlineKeyboardButton(
+    text=LEXICON_RU["rock_btn"],
+    callback_data="rock",
+)
+scissors = InlineKeyboardButton(
+    text=LEXICON_RU["scissors_btn"],
+    callback_data="scissors",
+)
+paper = InlineKeyboardButton(
+    text=LEXICON_RU["paper_btn"],
+    callback_data="paper",
+)
+cancel_game = InlineKeyboardButton(
+    text=LEXICON_RU["cancel_game_btn"],
+    callback_data="cancel_game"
+)
+score_tab = InlineKeyboardButton(
+    text=LEXICON_RU['show_tab_btn'],
+    callback_data="show_tab"
+)
+accept_from_but = InlineKeyboardButton(
+    text=LEXICON_RU['accept_from_btn'],
+    callback_data="accept_game"
+)
+back_to_game = InlineKeyboardButton(
+    text=LEXICON_RU['back_to_game_btn'],
+    callback_data="back_to_game"
+)
+buttons_dict: dict[str: list[InlineKeyboardButton]] = {
+    'try_invite_again': [try_invite_again],
+    'solo_but': [solo_but],
+    'duo_but': [duo_but],
+    'share_invite_but': [share_invite_but],
+    'contact_me': [contact_me],
+    'accept_game': [accept_game],
+    'rock': [rock],
+    'scissors': [scissors],
+    'paper': [paper],
+    'cancel_game': [cancel_game],
+    'score_tab': [score_tab],
+    'accept_from_but': [accept_from_but],
+    'back_to_game': [back_to_game]
+}
+</file>
+
+<file path="keyboards/keyboards.py">
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram.utils.keyboard import ReplyKeyboardBuilder
+from lexicon.lexicon_ru import LEXICON_RU
+button_yes = KeyboardButton(text=LEXICON_RU['yes_button'])
+button_no = KeyboardButton(text=LEXICON_RU['no_button'])
+yes_no_kb_builder = ReplyKeyboardBuilder()
+yes_no_kb_builder.row(button_yes, button_no, width=2)
+yes_no_kb: ReplyKeyboardMarkup = yes_no_kb_builder.as_markup(
+    one_time_keyboard=True,
+    resize_keyboard=True
+)
+button_1 = KeyboardButton(text=LEXICON_RU['rock'])
+button_2 = KeyboardButton(text=LEXICON_RU['scissors'])
+button_3 = KeyboardButton(text=LEXICON_RU['paper'])
+game_kb = ReplyKeyboardMarkup(
+    keyboard=[[button_1],
+              [button_2],
+              [button_3]],
+    resize_keyboard=True
+)
+</file>
+
+<file path="README.md">
+# RSPBot
+Telegram Rock Scissors Paper Bot
+123
+</file>
+
+<file path="services/middleware_tools.py">
+import logging
+from typing import Any,  Dict
+from pprint import pprint
+from BD.rooms import db_obj_rooms
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
+def get_event_content_type(event_content_type: Any, ev: Dict[str, Any]):
+    match event_content_type:
+        case "sticker":
+            logger.debug("\t file_id:\t\t\t\t\t%s\n",
+                         ev[event_content_type]["file_id"])
+        case "text":
+            logger.debug("\t text:\t\t\t\t\t\t%s\n",
+                         ev[event_content_type])
+        case "photo":
+            logger.debug("\t file_id:\t\t\t\t\t%s\n",
+                         ev[event_content_type][0]["file_id"])
+        case "document":
+            logger.debug("\t file_id:\t\t\t\t\t%s\n",
+                         ev[event_content_type]["file_id"])
+        case "poll":
+            logger.debug("\t id:\t\t\t\t\t\t%s\n",
+                         ev[event_content_type]["id"])
+        case "animation":
+            logger.debug("\t file_id:\t\t\t\t\t%s\n",
+                         ev[event_content_type]["file_id"])
+        case "voice":
+            logger.debug("\t file_id:\t\t\t\t\t%s\n",
+                         ev[event_content_type]["file_id"])
+def output_rooms_infos(dic: Any):
+    print(f"\n\n\nТЕКУЩАЯ КОМНАТА:\n")
+    pprint(dic)
+    print(f"\n\n\n")
+    print(f"ВСЕ КОМНАТЫ:\n")
+    for room_id in db_obj_rooms.keys():
+        dic_cycle = db_obj_rooms[room_id].__dict__
+        print(db_obj_rooms[room_id].room_id)
+        pprint(dic_cycle)
+        print(f"\n\n")
+    print(f"\n\n\n")
+</file>
+
+<file path="handlers/game_handlers/sujefa/callback_handlers.py">
+import logging
+from aiogram import F, Router, Bot
+from aiogram.types import CallbackQuery
+from lexicon.lexicon_ru import LEXICON_RU
+from services.db_tools.users_tools import add_new_user
+from Filters.MyFilters import OnlyOneTurn, AdmittedPlayer, ExpectedUser, IsSelfBotChat
+from BD.rooms import db_obj_rooms
+router = Router()
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
+@router.callback_query(F.data == "start_duo")
+async def answer_by_press_common_message(callback: CallbackQuery, bot: Bot):
+    add_new_user(callback.from_user.id, callback.from_user.username)
+    cur_room = db_obj_rooms[str(callback.message.chat.id)+str(callback.message.message_id)]
+    cur_room.set_player1(callback.from_user.id)
+    await bot.edit_message_caption(
+        chat_id=callback.message.chat.id,
+        message_id=callback.message.message_id,
+        caption=cur_room.caption,
+        reply_markup=cur_room.markup
+    )
+    await callback.answer("")
+@router.callback_query(F.data == "start_solo")
+async def press_solo_common_message(callback: CallbackQuery, bot: Bot):
+    add_new_user(callback.from_user.id, callback.from_user.username)
+    add_new_user(6270185948, "ИИ")
+    cur_room = db_obj_rooms[str(callback.message.chat.id)+str(callback.message.message_id)]
+    cur_room.set_solo_player(callback.from_user.id)
+    await bot.edit_message_caption(
+        chat_id=callback.message.chat.id,
+        message_id=callback.message.message_id,
+        caption=cur_room.solo_caption,
+        reply_markup=cur_room.markup
+    )
+@router.callback_query(F.data == "accept_game", ExpectedUser())
+async def pressed_accept_common_message(callback: CallbackQuery, bot: Bot):
+    add_new_user(callback.from_user.id, callback.from_user.username)
+    cur_room = db_obj_rooms[str(callback.message.chat.id)+str(callback.message.message_id)]
+    cur_room.set_player2(callback.from_user.id)
+    await bot.edit_message_caption(
+        chat_id=callback.message.chat.id,
+        message_id=callback.message.message_id,
+        caption=cur_room.caption,
+        reply_markup=cur_room.markup
+    )
+    await callback.answer("")
+@router.callback_query(F.data == "accept_game")
+async def double_pressed_accept_common_message(callback: CallbackQuery):
+    await callback.answer(text=LEXICON_RU['deny_double_invite'], show_alert=True)
+@router.callback_query(F.data == 'cancel_game', AdmittedPlayer())
+async def press_cancel_common_message(callback: CallbackQuery, bot: Bot):
+    add_new_user(callback.from_user.id, callback.from_user.username)
+    cur_room = db_obj_rooms[str(callback.message.chat.id)+str(callback.message.message_id)]
+    cur_room.cancel_game(callback.from_user.id)
+    await bot.edit_message_caption(
+        chat_id=callback.message.chat.id,
+        message_id=callback.message.message_id,
+        caption=cur_room.caption,
+        reply_markup=cur_room.markup
+    )
+    await callback.answer("")
+@router.callback_query(F.data == 'cancel_game')
+async def deny_press_cancel_common_message(callback: CallbackQuery):
+    await callback.answer(text=LEXICON_RU['deny_cancelling_their'], show_alert=True)
+@router.callback_query(F.data == "show_tab", AdmittedPlayer())
+async def press_show_table_common_message(callback: CallbackQuery, bot: Bot):
+    cur_room = db_obj_rooms[str(callback.message.chat.id)+str(callback.message.message_id)]
+    cur_room.show_room_stats()
+    await bot.edit_message_caption(
+        chat_id=callback.message.chat.id,
+        message_id=callback.message.message_id,
+        caption=cur_room.stats,
+        reply_markup=cur_room.markup
+    )
+@router.callback_query(F.data == 'show_tab')
+async def deny_press_table_common_message(callback: CallbackQuery):
+    await callback.answer(text=LEXICON_RU['deny_show_tab'], show_alert=True)
+@router.callback_query(F.data == "back_to_game", AdmittedPlayer())
+async def press_back_to_game_common_message(callback: CallbackQuery, bot: Bot):
+    cur_room = db_obj_rooms[str(callback.message.chat.id)+str(callback.message.message_id)]
+    cur_room.returning_to_game()
+    await bot.edit_message_caption(
+        chat_id=callback.message.chat.id,
+        message_id=callback.message.message_id,
+        caption=cur_room.caption,
+        reply_markup=cur_room.markup
+    )
+@router.callback_query(F.data == 'back_to_game')
+async def deny_press_back_to_game_common_message(callback: CallbackQuery):
+    await callback.answer(text=LEXICON_RU['deny_back_to_game'], show_alert=True)
+@router.callback_query(
+    F.data.in_({'rock', 'paper', 'scissors'}),
+    AdmittedPlayer(),
+    OnlyOneTurn(),
+)
+async def pressed_turn_common_message(callback: CallbackQuery, bot: Bot):
+    cur_room = db_obj_rooms[str(callback.message.chat.id)+str(callback.message.message_id)]
+    cur_room.set_turn(callback.from_user.id, callback.data)
+    await bot.edit_message_caption(
+        chat_id=callback.message.chat.id,
+        message_id=callback.message.message_id,
+        caption=cur_room.caption,
+        reply_markup=cur_room.markup
+    )
+    await callback.answer("")
+@router.callback_query(F.data.in_({'rock', 'paper', 'scissors'}), AdmittedPlayer())
+async def non_admitted_turn_common_message(callback: CallbackQuery):
+    await callback.answer(text=LEXICON_RU['deny_double_turn'], show_alert=True)
+@router.callback_query(F.data.in_({'rock', 'paper', 'scissors'}))
+async def non_admitted_turn_common_message(callback: CallbackQuery):
+    await callback.answer(text=LEXICON_RU['non_admitted_turn'], show_alert=True)
+</file>
+
+<file path="keyboards/inline_keyboards.py">
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from keyboards.inline_keyboard_buttons import buttons_dict
+from lexicon.lexicon_ru import LEXICON_RU
+kb_for_solo = InlineKeyboardMarkup(
+    inline_keyboard=[buttons_dict['solo_but'],
+                     buttons_dict['share_invite_but']]
+)
+kb_for_duo = InlineKeyboardMarkup(
+    inline_keyboard=[buttons_dict['duo_but'],
+                     buttons_dict['solo_but'],
+                     buttons_dict['share_invite_but']]
+)
+kb_game_started = InlineKeyboardMarkup(
+    inline_keyboard=[buttons_dict['rock'],
+                     buttons_dict['scissors'],
+                     buttons_dict['paper'],
+                     buttons_dict['score_tab'],
+                     buttons_dict['cancel_game'],
+                     ]
+)
+kb_contact = InlineKeyboardMarkup(
+    inline_keyboard=[buttons_dict['contact_me'],
+                     ]
+)
+kb_try_again_invite = InlineKeyboardMarkup(
+    inline_keyboard=[buttons_dict['try_invite_again']]
+)
+def kb_get_accept(name_from: str) -> InlineKeyboardMarkup:
+    buttons_dict['accept_from_but'].text += name_from
+    kb_get_accept_res = InlineKeyboardMarkup(
+        inline_keyboard=[buttons_dict['accept_from_but'],
+                         buttons_dict['cancel_game']]
+    )
+    return kb_get_accept_res
+</file>
+
+<file path="services/db_tools/db_tools.py">
+
+</file>
+
+<file path="text/logic.txt">
+1 inline updates в любом чате (в чате с ботом замена на сообщение)
+2 message updates во всех чатах, где бот может отправлять сообщения сам, то есть везде, кроме лички с другими 
+
+iu -> callback.inline_message_id кроме чата с ботом room_id=callback.inline_message_id!!!!!!!!!
+
+iu в чате с ботом:
+ 1 поймать апдейт с inline сообщением via @bot bot == bot.id
+ 2 bot.send_photo (message.chat.id)
+ 3 bot.delete_message(chat_id=message.chat.id,
+                   message_id=message.message_id)
+
+   room_id=(message.message_id+1)+message.chat.id
+
+mu в чате с ботом:
+    1 поймать апдейт message
+    2 bot.send_photo (message.chat.id)
+    3 bot.delete_message(chat_id=message.chat.id,
+                   message_id=message.message_id)
+
+    room_id=(message.message_id+1)+message.chat.id
+
+mu в группе:
+    1 поймать апдейт message
+    2 bot.send_photo (message.chat.id)
+    3 bot.delete_message(chat_id=message.chat.id,
+                   message_id=message.message_id)
+
+    room_id=(message.message_id+1)+message.chat.id
+
+Фильтрация :
+в чате с ботом? (message.message_id+1)+message.chat.id
+инлайн? (callback.inline_message_id)
+не инлайн? (message.message_id+1)+message.chat.id
+</file>
+
+<file path="text/update_example.txt">
+#callback_query example-------------------------------------------------------------------------------------------------
+{
+    "update_id": 130219459,
+    "callback_query": {
+        "id": "598526992889389342",
+        "from_user": {
+            "id": 139355424,
+            "is_bot": false,
+            "first_name": "Surt",
+            "last_name": "Red",
+            "username": "SurtRed",
+            "language_code": "ru",
+            "is_premium": true
+        },
+        "chat_instance": "4559514413850734011",
+        "message": {
+            "message_id": 2634,
+            "date": 1721911396,
+            "chat": {
+                "id": 139355424,
+                "type": "private",
+                "username": "SurtRed",
+                "first_name": "Surt",
+                "last_name": "Red"
+            },
+            "from_user": {
+                "id": 6270185948,
+                "is_bot": true,
+                "first_name": "esregbot",
+                "username": "esregbot"
+            },
+            "text": "Приветствую в боте",
+            "reply_markup": {
+                "inline_keyboard": [
+                    [
+                        {
+                            "text": "Кнопка 1",
+                            "callback_data": "but_1"
+                        },
+                        {
+                            "text": "Кнопка 3",
+                            "callback_data": "but_3"
+                        },
+                        {
+                            "text": "Кнопка 7",
+                            "callback_data": "but_7"
+                        }
+                    ],
+                    [
+                        {
+                            "text": "Кнопки теперь обрабатывают нажатие",
+                            "callback_data": "but_info"
+                        }
+                    ]
+                ]
+            }
+        },
+        "data": "but_info"
+    }
+}
+
+#message example--------------------------------------------------------------------------------------------------------
+{
+    "update_id": 130219481,
+    "message": {
+        "message_id": 2653,
+        "date": 1721920232,
+        "chat": {
+            "id": 139355424,
+            "type": "private",
+            "username": "SurtRed",
+            "first_name": "Surt",
+            "last_name": "Red"
+        },
+        "from_user": {
+            "id": 139355424,
+            "is_bot": false,
+            "first_name": "Surt",
+            "last_name": "Red",
+            "username": "SurtRed",
+            "language_code": "ru",
+            "is_premium": true
+        },
+        "text": "dd"
+    }
+}
+
+#sticker example--------------------------------------------------------------------------------------------------------
+{
+    "update_id": 130219482,
+    "message": {
+        "message_id": 2655,
+        "date": 1721920261,
+        "chat": {
+            "id": 139355424,
+            "type": "private",
+            "username": "SurtRed",
+            "first_name": "Surt",
+            "last_name": "Red"
+        },
+        "from_user": {
+            "id": 139355424,
+            "is_bot": false,
+            "first_name": "Surt",
+            "last_name": "Red",
+            "username": "SurtRed",
+            "language_code": "ru",
+            "is_premium": true
+        },
+        "sticker": {
+            "file_id": "CAACAgQAAxkBAAIKX2aiawSMRfS-tXDBD59LCzjicuSkAAJDBwAClvDQU-ACYwQN_WreNQQ",
+            "file_unique_id": "AgADQwcAApbw0FM",
+            "type": "regular",
+            "width": 512,
+            "height": 370,
+            "is_animated": false,
+            "is_video": false,
+            "thumbnail": {
+                "file_id": "AAMCBAADGQEAAgpfZqJrBIxF9L61cMEPn0sLOOJy5KQAAkMHAAKW8NBT4AJjBA39at4BAAdtAAM1BA",
+                "file_unique_id": "AQADQwcAApbw0FNy",
+                "width": 320,
+                "height": 231,
+                "file_size": 11018
+            },
+            "emoji": "😴",
+            "set_name": "kotyakkk",
+            "file_size": 18558,
+            "thumb": {
+                "file_id": "AAMCBAADGQEAAgpfZqJrBIxF9L61cMEPn0sLOOJy5KQAAkMHAAKW8NBT4AJjBA39at4BAAdtAAM1BA",
+                "file_unique_id": "AQADQwcAApbw0FNy",
+                "file_size": 11018,
+                "width": 320,
+                "height": 231
+            }
+        }
+    }
+}
+
+#voice example ---------------------------------------------------------------------------------------------------------
+{
+    "update_id": 130219483,
+    "message": {
+        "message_id": 2657,
+        "date": 1721920351,
+        "chat": {
+            "id": 139355424,
+            "type": "private",
+            "username": "SurtRed",
+            "first_name": "Surt",
+            "last_name": "Red"
+        },
+        "from_user": {
+            "id": 139355424,
+            "is_bot": false,
+            "first_name": "Surt",
+            "last_name": "Red",
+            "username": "SurtRed",
+            "language_code": "ru",
+            "is_premium": true
+        },
+        "voice": {
+            "file_id": "AwACAgIAAxkBAAIKYWaia19p8hHtieF4HhUMknQzk_IHAAJCVQACecMQSRYDFVoIMiVXNQQ",
+            "file_unique_id": "AgADQlUAAnnDEEk",
+            "duration": 2,
+            "mime_type": "audio/ogg",
+            "file_size": 13453
+        }
+    }
+}
+
+#---------------------------------------------------------------------------------------------------
+
+# room_dict = {
+#         "player1": {
+#                 "username": "SurtRed",
+#                 "turn": "rock",
+#                 "id": 139355424
+#         },
+#         "player2": {
+#                 "username": "radica1_dreamer",
+#                 "turn": "rock",
+#                 "id": 352432451
+#         },
+#         "total_matches": 0,
+#         "draws": 0
+#         }
+
+# пример структур:
+# db_rooms = {"AAAasgjfhsflqweq;;kf": {}]
+# }
+
+# user = {'username': "",
+#         'id': 0,
+#         'wins': 0,
+#         'rooms': [""],
+#         'opponents': {"None_opponents": {"wins": 0, "total_games": 0}},
+#         'total_games': 0}
+
+# some changes
+</file>
+
+<file path="BD/rooms.py">
+from services.db_tools.rooms_tools import Room
+from typing import Any
+db_obj_rooms: dict[Any, Room(object)] = {}
+</file>
+
+<file path="handlers/game_handlers/sujefa/inline_mode_handlers/callback_handlers_inline_mode.py">
+import logging
+from aiogram import F, Router, Bot
+from aiogram.types import CallbackQuery, Message, InputMediaPhoto
+from lexicon.lexicon_ru import LEXICON_RU
+from services.db_tools.users_tools import add_new_user
+from Filters.MyFilters import OnlyOneTurn, AdmittedPlayer, ExpectedUser, IsInlineMode, IsRoomMissing
+from BD.rooms import db_obj_rooms
+from keyboards.inline_keyboards import kb_try_again_invite
+router = Router()
+router.callback_query.filter(
+    IsInlineMode(),
+)
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
+@router.callback_query(IsRoomMissing())
+async def delete_anonymous_instance(callback: CallbackQuery, bot: Bot):
+    pic1 = InputMediaPhoto(
+        media="AgACAgIAAxkBAAIODWlJ9T4sKWjwA__TzxAamTPru0lxAAK2D2sbKXFRSj22BAOFuE3jAQADAgADcwADNgQ",
+        caption=LEXICON_RU['deny_anonymous_start'],
+        show_caption_above_media=False
+    )
+    await bot.edit_message_media(
+        inline_message_id=callback.inline_message_id,
+        media=pic1,
+        reply_markup=kb_try_again_invite
+    )
+    await callback.answer("")
+@router.callback_query(F.data == "start_duo")
+async def answer_by_press_inline_message(callback: CallbackQuery, bot: Bot):
+    add_new_user(callback.from_user.id, callback.from_user.username)
+    cur_room = db_obj_rooms[callback.inline_message_id]
+    cur_room.set_player1(callback.from_user.id)
+    await bot.edit_message_caption(
+        inline_message_id=callback.inline_message_id,
+        caption=cur_room.caption,
+        reply_markup=cur_room.markup
+    )
+    await callback.answer("")
+@router.callback_query(F.data == "start_solo")
+async def press_solo_inline_message(callback: CallbackQuery, bot: Bot):
+    add_new_user(callback.from_user.id, callback.from_user.username)
+    add_new_user(6270185948, "ИИ")
+    cur_room = db_obj_rooms[callback.inline_message_id]
+    cur_room.set_solo_player(callback.from_user.id)
+    await bot.edit_message_caption(
+        inline_message_id=callback.inline_message_id,
+        caption=cur_room.solo_caption,
+        reply_markup=cur_room.markup
+    )
+@router.callback_query(F.data == "accept_game", ExpectedUser())
+async def pressed_accept_inline_message(callback: CallbackQuery, bot: Bot):
+    add_new_user(callback.from_user.id, callback.from_user.username)
+    cur_room = db_obj_rooms[callback.inline_message_id]
+    cur_room.set_player2(callback.from_user.id)
+    await bot.edit_message_caption(
+        inline_message_id=callback.inline_message_id,
+        caption=cur_room.caption,
+        reply_markup=cur_room.markup
+    )
+    await callback.answer("")
+@router.callback_query(F.data == "accept_game")
+async def double_pressed_accept_inline_message(callback: CallbackQuery):
+    await callback.answer(text=LEXICON_RU['deny_double_invite'], show_alert=True)
+@router.callback_query(F.data == 'cancel_game', AdmittedPlayer())
+async def press_cancel_inline_message(callback: CallbackQuery, bot: Bot):
+    cur_room = db_obj_rooms[callback.inline_message_id]
+    cur_room.cancel_game(callback.from_user.id)
+    await bot.edit_message_caption(
+        inline_message_id=callback.inline_message_id,
+        caption=cur_room.caption,
+        reply_markup=cur_room.markup
+    )
+    await callback.answer("")
+@router.callback_query(F.data == 'cancel_game')
+async def deny_press_cancel_inline_message(callback: CallbackQuery):
+    await callback.answer(text=LEXICON_RU['deny_cancelling_their'], show_alert=True)
+@router.callback_query(F.data == "show_tab", AdmittedPlayer())
+async def press_show_table_inline_message(callback: CallbackQuery, bot: Bot):
+    cur_room = db_obj_rooms[callback.inline_message_id]
+    cur_room.show_room_stats()
+    await bot.edit_message_caption(
+        inline_message_id=callback.inline_message_id,
+        caption=cur_room.stats,
+        reply_markup=cur_room.markup
+    )
+@router.callback_query(F.data == 'show_tab')
+async def deny_press_table_inline_message(callback: CallbackQuery):
+    await callback.answer(text=LEXICON_RU['deny_show_tab'], show_alert=True)
+@router.callback_query(F.data == "back_to_game", AdmittedPlayer())
+async def press_back_to_game_inline_message(callback: CallbackQuery, bot: Bot):
+    cur_room = db_obj_rooms[callback.inline_message_id]
+    cur_room.returning_to_game()
+    await bot.edit_message_caption(
+        inline_message_id=callback.inline_message_id,
+        caption=cur_room.caption,
+        reply_markup=cur_room.markup
+    )
+@router.callback_query(F.data == 'back_to_game')
+async def deny_press_back_to_game_inline_message(callback: CallbackQuery):
+    await callback.answer(text=LEXICON_RU['deny_back_to_game'], show_alert=True)
+@router.callback_query(
+    F.data.in_({'rock', 'paper', 'scissors'}),
+    AdmittedPlayer(),
+    OnlyOneTurn(),
+)
+async def pressed_turn_inline_message(callback: CallbackQuery, bot: Bot):
+    cur_room = db_obj_rooms[callback.inline_message_id]
+    cur_room.set_turn(callback.from_user.id, callback.data)
+    await bot.edit_message_caption(
+        inline_message_id=callback.inline_message_id,
+        caption=cur_room.caption,
+        reply_markup=cur_room.markup
+    )
+    await callback.answer("")
+@router.callback_query(F.data.in_({'rock', 'paper', 'scissors'}), AdmittedPlayer())
+async def non_admitted_turn_inline_message(callback: CallbackQuery):
+    await callback.answer(text=LEXICON_RU['deny_double_turn'], show_alert=True)
+@router.callback_query(F.data.in_({'rock', 'paper', 'scissors'}))
+async def non_admitted_turn_inline_message(callback: CallbackQuery):
+    await callback.answer(text=LEXICON_RU['non_admitted_turn'], show_alert=True)
+</file>
+
+<file path="handlers/game_handlers/sujefa/inline_mode_handlers/inline_handlers.py">
+import logging
+from aiogram import F, Router, Bot
+from keyboards.inline_keyboards import kb_for_duo, kb_contact
+from aiogram.types import (
+    InlineQuery,
+    InlineQueryResultCachedDocument,
+    InlineQueryResultsButton,
+    InlineQueryResultCachedPhoto,
+    InlineQueryResultArticle,
+    InputTextMessageContent,
+    InlineQueryResultPhoto
+    )
+from lexicon.lexicon_ru import LEXICON_RU
+router = Router()
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
+@router.inline_query(F.query == "")
+async def inline_empty(inline: InlineQuery, bot: Bot):
+    but = InlineQueryResultsButton(
+        text=LEXICON_RU['register'],
+        start_parameter='reg'
+    )
+    res1 = InlineQueryResultCachedDocument(
+        id="1",
+        title=LEXICON_RU["title"],
+        document_file_id="BQACAgIAAxkBAAIMYGayP4Lk1WX4BaIrA0m34-Fl6TxFAAJkWQACX6aRSa2mW2JbmGOfNQQ",
+        description=LEXICON_RU["s_description"],
+        caption=LEXICON_RU["/start"],
+        reply_markup=kb_for_duo,
+    )
+    res2 = InlineQueryResultCachedDocument(
+        id="2",
+        title=LEXICON_RU["suggestion_title"],
+        document_file_id="BQACAgIAAxkBAAIOEWlKBH6v_RgL9xaw0s9gqqEQU16QAAJkngACKXFRSmVFB_dF_jQlNgQ",
+        description=LEXICON_RU["suggestion_description"],
+        caption=LEXICON_RU["suggestion_contact"],
+        reply_markup=kb_contact,
+    )
+    res3 = InlineQueryResultCachedPhoto(
+        id="3",
+        title=LEXICON_RU["suggestion_title"],
+        photo_file_id="AgACAgIAAxkBAAIN9GkIA5NIaigzKBOc2nNDn345z5bpAAIxC2sbDwlASJ8ttRS1rNokAQADAgADcwADNgQ",
+        description=LEXICON_RU["suggestion_description"],
+        caption=LEXICON_RU["suggestion_contact"],
+        reply_markup=kb_contact,
+    )
+    res4 = InlineQueryResultCachedPhoto(
+        id="4",
+        title=LEXICON_RU["suggestion_title"],
+        photo_file_id="AgACAgIAAxkBAAIN9GkIA5NIaigzKBOc2nNDn345z5bpAAIxC2sbDwlASJ8ttRS1rNokAQADAgADcwADNgQ",
+        description=LEXICON_RU["suggestion_description"],
+        caption=LEXICON_RU["suggestion_description"],
+        reply_markup=kb_contact,
+    )
+    await bot.answer_inline_query(inline_query_id=inline.id,
+                                  results=[res1, res2],
+                                  button=but,
+                                  cache_time=1,
+                                  is_personal=True,
+                                  )
+@router.inline_query(F.query == "new game")
+async def inline_empty(inline: InlineQuery, bot: Bot):
+    but = InlineQueryResultsButton(
+        text=LEXICON_RU['register'],
+        start_parameter='reg'
+    )
+    res1 = InlineQueryResultCachedDocument(
+        id="1",
+        title=LEXICON_RU["title"],
+        document_file_id="BQACAgIAAxkBAAIMYGayP4Lk1WX4BaIrA0m34-Fl6TxFAAJkWQACX6aRSa2mW2JbmGOfNQQ",
+        description=LEXICON_RU["s_description"],
+        caption=LEXICON_RU["/start"],
+        reply_markup=kb_for_duo,
+    )
+    res2 = InlineQueryResultCachedDocument(
+        id="2",
+        title=LEXICON_RU["suggestion_title"],
+        document_file_id="BQACAgIAAxkBAAIOEWlKBH6v_RgL9xaw0s9gqqEQU16QAAJkngACKXFRSmVFB_dF_jQlNgQ",
+        description=LEXICON_RU["suggestion_description"],
+        caption=LEXICON_RU["suggestion_contact"],
+        reply_markup=kb_contact,
+    )
+    await bot.answer_inline_query(inline_query_id=inline.id,
+                                  results=[res1, res2],
+                                  button=but,
+                                  cache_time=1,
+                                  is_personal=True,
+                                  )
+</file>
+
+<file path="handlers/game_handlers/sujefa/inline_mode_handlers/result_chosen_handler.py">
+from aiogram import F, Router, Bot
+from aiogram.exceptions import TelegramBadRequest
+from keyboards.inline_keyboards import kb_for_duo, kb_contact
+from aiogram.types import (
+    ChosenInlineResult,
+    InputMediaPhoto,
+    )
+from lexicon.lexicon_ru import LEXICON_RU
+from services.db_tools.rooms_tools import Room
+from BD.rooms import db_obj_rooms
+router = Router()
+@router.chosen_inline_result(F.query == "new game")
+async def result_chosen(result: ChosenInlineResult, bot: Bot):
+    pic1 = InputMediaPhoto(
+        media="AgACAgIAAxkBAAIMRWayNOxIjIUPC--Tu9KpPpbobYqcAALv3zEbX6aRSWrufRy5Q_5IAQADAgADeAADNQQ",
+        caption=LEXICON_RU["/start"],
+        show_caption_above_media=False
+    )
+    pic2 = InputMediaPhoto(
+        media="AgACAgIAAxkBAAIMpmjUqNljh7pH-xLu7e69TM7hc-ITAAIFDjIbbAWhSia9edUcu65FAQADAgADeAADNgQ",
+        caption=LEXICON_RU["suggestion_contact"],
+        show_caption_above_media=False
+    )
+    if result.result_id == "1":
+        try:
+            await bot.edit_message_media(media=pic1,
+                                     inline_message_id=result.inline_message_id,
+                                     reply_markup=kb_for_duo)
+        except TelegramBadRequest:
+            pass
+        else:
+            new_room = Room(result.inline_message_id)
+            db_obj_rooms.update({new_room.room_id: new_room})
+    if result.result_id == "2":
+        await bot.edit_message_media(media=pic2,
+                                     inline_message_id=result.inline_message_id,
+                                     reply_markup=kb_contact)
+@router.chosen_inline_result(F.query == "")
+async def result_chosen(result: ChosenInlineResult, bot: Bot):
+    pic1 = InputMediaPhoto(
+        media="AgACAgIAAxkBAAIMRWayNOxIjIUPC--Tu9KpPpbobYqcAALv3zEbX6aRSWrufRy5Q_5IAQADAgADeAADNQQ",
+        caption=LEXICON_RU["/start"],
+        show_caption_above_media=False
+    )
+    pic2 = InputMediaPhoto(
+        media="AgACAgIAAxkBAAIMpmjUqNljh7pH-xLu7e69TM7hc-ITAAIFDjIbbAWhSia9edUcu65FAQADAgADeAADNgQ",
+        caption=LEXICON_RU["suggestion_contact"],
+        show_caption_above_media=False
+    )
+    if result.result_id == "1":
+        try:
+            await bot.edit_message_media(media=pic1,
+                                     inline_message_id=result.inline_message_id,
+                                     reply_markup=kb_for_duo)
+        except TelegramBadRequest:
+            pass
+        else:
+            new_room = Room(result.inline_message_id)
+            db_obj_rooms.update({new_room.room_id: new_room})
+    if result.result_id == "2":
+        await bot.edit_message_media(media=pic2,
+                                     inline_message_id=result.inline_message_id,
+                                     reply_markup=kb_contact)
+</file>
+
+<file path="handlers/maintenance.py">
+import logging
+from aiogram import F, Router
+from aiogram.filters import MagicData
+from aiogram.types import CallbackQuery, Message, InlineQuery, ChosenInlineResult
+maintenance_router = Router()
+maintenance_router.message.filter(MagicData(F.maintenance_mode.is_(True)))
+maintenance_router.callback_query.filter(MagicData(F.maintenance_mode.is_(True)))
+maintenance_router.inline_query.filter(MagicData(F.maintenance_mode.is_(True)))
+maintenance_router.chosen_inline_result.filter(MagicData(F.maintenance_mode.is_(True)))
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
+@maintenance_router.message()
+async def message_maintenance(message: Message):
+    pass
+@maintenance_router.callback_query()
+async def callback_maintenance(callback: CallbackQuery):
+    pass
+@maintenance_router.inline_query()
+async def inline_maintenance(inline: InlineQuery):
+    pass
+@maintenance_router.chosen_inline_result()
+async def chosen_inline_result_maintenance(result: ChosenInlineResult):
+    pass
+</file>
+
+<file path=".gitignore">
+.idea/
+.venv/
+.env
+*__pycache__
+</file>
+
+<file path="services/db_tools/users_tools.py">
+import logging
+from typing import Any
+from BD.users import db_users
+logger = logging.getLogger(__name__)
+def add_new_user(user_id: int, username: str) -> Any:
+    if user_id in db_users:
+        return
+    else:
+        db_users.update({user_id: {}})
+        db_users[user_id].update({
+            'username': username,
+            'id': user_id,
+            'opponents': {},
+            'total_wins': 0,
+            'total_matches': 0
+        })
+def create_opponent(user_id: int, opponent_id: int):
+    if user_id in db_users and opponent_id in db_users:
+        if opponent_id not in db_users[user_id]['opponents']:
+            new_opponent = {opponent_id: {
+                'username': db_users[opponent_id]['username'],
+                'id': db_users[opponent_id]['id'],
+                }
+            }
+            db_users[user_id]['opponents'].update(new_opponent)
+            new_o_opponent = {user_id: {
+                'username': db_users[user_id]['username'],
+                'id': db_users[user_id]['id'],
+                }
+            }
+            db_users[opponent_id]['opponents'].update(new_o_opponent)
+def update_opponents_data(user_id: int, opponent_id: int, draw: bool) -> Any:
+    user = db_users[user_id]
+    cur_draws_u = db_users[user_id]['opponents'][opponent_id].setdefault('draws', 0)
+    cur_draws_o = db_users[opponent_id]['opponents'][user_id].setdefault('draws', 0)
+    cur_wins_u = db_users[user_id]['opponents'][opponent_id].setdefault('wins', 0)
+    cur_wins_o = db_users[opponent_id]['opponents'][user_id].setdefault('wins', 0)
+    cur_tot_u = db_users[user_id]['opponents'][opponent_id].setdefault('total_games', 0)
+    cur_tot_o = db_users[opponent_id]['opponents'][user_id].setdefault('total_games', 0)
+    if draw:
+        db_users[user_id]['opponents'][opponent_id].update({'draws': cur_draws_u + 1})
+        db_users[user_id]['opponents'][opponent_id].update({'total_games': cur_tot_u + 1})
+        db_users[opponent_id]['opponents'][user_id].update({'draws': cur_draws_o + 1})
+        db_users[opponent_id]['opponents'][user_id].update({'total_games': cur_tot_o + 1})
+        return
+    all_wins = user.setdefault('total_wins', 0)
+    user.update({'total_wins': all_wins + 1})
+    db_users[user_id]['opponents'][opponent_id].update({'wins': cur_wins_u + 1})
+    db_users[user_id]['opponents'][opponent_id].update({'total_games': cur_tot_u + 1})
+    db_users[opponent_id]['opponents'][user_id].update({'total_games': cur_tot_o + 1})
+def get_username(user_id) -> str:
+    if user_id in db_users:
+        if db_users[user_id]["username"]:
+            cur_username = db_users[user_id]["username"]
+        else:
+            cur_username = db_users[user_id]["id"]
+        return str(cur_username)
+</file>
+
+<file path="Filters/MyFilters.py">
+from aiogram.types import Message, CallbackQuery, InlineQuery, Message, Update, ChosenInlineResult
+from BD.rooms import db_obj_rooms
+from typing import Union
+from aiogram.filters import BaseFilter
+class IsSelfBotChat(BaseFilter):
+    async def __call__(self, update: Union[Message, CallbackQuery]) -> bool:
+        if isinstance(update, Message):
+            if update.chat.id == update.from_user.id:
+                return True
+            else:
+                return False
+        elif isinstance(update, CallbackQuery):
+            if update.from_user.id == update.message.chat.id:
+                return True
+            else:
+                return False
+class IsRoomMissing(BaseFilter):
+    async def __call__(self, callback: CallbackQuery) -> bool:
+        if callback.inline_message_id in db_obj_rooms:
+            return False
+        else:
+            return True
+class IsViaSelfBot(BaseFilter):
+    async def __call__(self, message: Message) -> bool:
+        if IsSelfBotChat():
+            if message.via_bot:
+                if message.via_bot.id == 6270185948:
+                    return True
+                else:
+                    return False
+            else:
+                return False
+        else:
+            return False
+class IsInlineMode(BaseFilter):
+    async def __call__(self, callback: CallbackQuery) -> bool:
+        if callback.inline_message_id:
+            return True
+        else:
+            return False
+class ExpectedUser(BaseFilter):
+    async def __call__(self, callback: CallbackQuery) -> bool:
+        if callback.inline_message_id:
+            room = db_obj_rooms[callback.inline_message_id]
+        else:
+            room = db_obj_rooms[str(callback.message.chat.id)+str(callback.message.message_id)]
+        result = callback.from_user.id not in room.player1.values() and callback.from_user.id not in room.player2.values()
+        return result
+class OnlyOneTurn(BaseFilter):
+    async def __call__(self, callback: CallbackQuery) -> bool:
+        if callback.inline_message_id:
+            room = db_obj_rooms[callback.inline_message_id]
+            res = not room.get_turn(callback.from_user.id)
+            return res
+        if callback.message:
+            room = db_obj_rooms[str(callback.message.chat.id)+str(callback.message.message_id)]
+            res = not room.get_turn(callback.from_user.id)
+            return res
+        return False
+class AdmittedPlayer(BaseFilter):
+    async def __call__(self, callback: CallbackQuery) -> bool:
+        player_id = callback.from_user.id
+        if callback.inline_message_id:
+            room = db_obj_rooms[callback.inline_message_id]
+        else:
+            room = db_obj_rooms[str(callback.message.chat.id)+str(callback.message.message_id)]
+        return player_id in room.player1.values() or player_id in room.player2.values()
+</file>
+
+<file path="services/tools.py">
+import random
+def get_bot_choice() -> str:
+    return random.choice(["rock", "paper", "scissors"])
+</file>
+
+<file path="main.py">
+import asyncio
+import logging
+from keyboards.main_menu import set_main_menu
+from aiogram import Bot, Dispatcher
+from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ParseMode
+from config_data.config import Config, load_config
+from handlers import (
+    maintenance,
+)
+from handlers.game_handlers.sujefa.inline_mode_handlers import (
+    callback_handlers_inline_mode,
+    inline_handlers,
+    result_chosen_handler)
+from handlers.game_handlers.sujefa import(
+    message_handlers,
+    commands_handlers,
+    callback_handlers,
+    other_handlers)
+from middlewares.outer import (
+    OuterMessageMiddleware,
+    OuterCallbackMiddleware,
+    OuterInlineMiddleware,
+    OuterResultMiddleware
+)
+logger = logging.getLogger(__name__)
+async def main():
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(filename)s:%(lineno)d #%(levelname)-8s '
+               '[%(asctime)s] - %(name)s - %(message)s')
+    logger.info('Starting bot')
+    config: Config = load_config()
+    bot = Bot(
+        token=config.tg_bot.token,
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+    )
+    dp = Dispatcher(maintenance_mode=False)
+    await set_main_menu(bot)
+    dp.message.outer_middleware(OuterMessageMiddleware())
+    dp.callback_query.outer_middleware(OuterCallbackMiddleware())
+    dp.inline_query.outer_middleware(OuterInlineMiddleware())
+    dp.chosen_inline_result.outer_middleware(OuterResultMiddleware())
+    dp.include_router(maintenance.maintenance_router)
+    dp.include_router(inline_handlers.router)
+    dp.include_router(callback_handlers_inline_mode.router)
+    dp.include_router(callback_handlers.router)
+    dp.include_router(message_handlers.router)
+    dp.include_router(result_chosen_handler.router)
+    dp.include_router(commands_handlers.router)
+    dp.include_router(other_handlers.router)
+    await bot.delete_webhook(drop_pending_updates=True)
+    await dp.start_polling(bot)
+asyncio.run(main())
+</file>
+
+<file path="services/db_tools/rooms_tools.py">
+from keyboards.inline_keyboards import kb_for_duo
+from lexicon.lexicon_ru import LEXICON_RU
+from typing import Any
+from BD.users import db_users
+from services.db_tools.users_tools import create_opponent, get_username
+from services.tools import get_bot_choice
+from aiogram.types import InlineKeyboardMarkup
+from keyboards.inline_keyboards import buttons_dict
+class Room:
+    room_id = ''
+    def __init__(self, room_id):
+        self.stats = ""
+        self.room_id = room_id
+        self.player1 = {}
+        self.player2 = {}
+        self.players_wins = {}
+        self.players_score = {}
+        self.total_matches = 0
+        self.draws = 0
+        self.is_solo = False
+        self.both_turn = False
+        self.turn_in_row = 1
+        self.caption = LEXICON_RU["/start"]
+        self.solo_caption = LEXICON_RU["solo_do_turn"]
+        self.markup = kb_for_duo
+        self.players_list = set()
+    def __del__(self):
+        print(f"УДАЛИЛИ КОМНАТУ С НОМЕРОМ {self.room_id}")
+    def set_solo_player(self, player_id: int):
+        loc = LEXICON_RU
+        cur_username = get_username(player_id)
+        self.is_solo = True
+        if 'username' not in self.player1:
+            self.player1.update(username=cur_username)
+            self.player1.update(id=player_id)
+            self.players_score.update({player_id: 0})
+            self.players_list.add(player_id)
+            href_player = f'<b><a href=\"tg://user?id={player_id}\">{get_username(player_id)}</a></b>'
+            self.solo_caption = f"{loc['s_title']}\nРаунд {self.turn_in_row}\n\n"
+            self.solo_caption += f'{loc['player1']}: \n{loc['hm']}\t{href_player}\t{loc['thinking']}\t\n\n'
+            self.set_player_bot()
+        self.markup = InlineKeyboardMarkup(
+            inline_keyboard=[
+                buttons_dict['rock'],
+                buttons_dict['scissors'],
+                buttons_dict['paper'],
+                buttons_dict['score_tab'],
+                buttons_dict['cancel_game']
+            ]
+        )
+    def set_player1(self, player_id: int):
+        cur_username = get_username(player_id)
+        self.is_solo = False
+        if 'username' not in self.player1:
+            self.player1.update(username=cur_username)
+            self.player1.update(id=player_id)
+            self.players_score.update({player_id: 0})
+            self.caption = self.get_caption()
+            self.players_list.add(player_id)
+            but_copy = buttons_dict['accept_from_but'][0].copy()
+            but_copy.text += get_username(player_id)
+            self.markup = InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [but_copy],
+                    buttons_dict['cancel_game'],
+                ]
+            )
+    def set_player_bot(self):
+        loc = LEXICON_RU
+        self.player2.update(id=6270185948)
+        self.player2.update(username="ИИ")
+        self.players_score.update({6270185948: 0})
+        self.players_list.add(6270185948)
+        self.set_turn(6270185948, get_bot_choice())
+        href_bot = f'<b><a href=\"tg://user?id={6270185948}\">ИИ</a></b>'
+        self.solo_caption += f'{loc['player2']}: \n{loc['ready']}\t{href_bot}\t{loc['turn_done']}\t\n\n'
+    def set_player2(self, player_id: int):
+        cur_username = get_username(player_id)
+        if 'username' not in self.player2:
+            self.player2.update(username=cur_username)
+            self.player2.update(id=player_id)
+            self.players_score.update({player_id: 0})
+            self.caption = self.get_caption()
+            self.players_list.add(player_id)
+            self.markup = InlineKeyboardMarkup(
+                    inline_keyboard=[
+                        buttons_dict['rock'],
+                        buttons_dict['scissors'],
+                        buttons_dict['paper'],
+                        buttons_dict['score_tab'],
+                        buttons_dict['cancel_game']
+                    ]
+                )
+    def cancel_game(self, player_id: int):
+        self.both_turn = False
+        self.turn_in_row = 1
+        self.player1 = {}
+        self.player2 = {}
+        self.caption = (f"Игрок <a href=\"tg://user?id={player_id}\">{get_username(player_id)}\t</a>"
+                        f"{LEXICON_RU['cancelling_game']}")
+        self.markup: InlineKeyboardMarkup = kb_for_duo
+    def get_player_num(self, player_id: int) -> str:
+        cur_id: int = 0
+        if player_id in db_users:
+            cur_id = player_id
+        if cur_id in self.player1.values():
+            return "player1"
+        if cur_id in self.player2.values():
+            return "player2"
+        return ""
+    def is_player1(self, player_id: int) -> bool:
+        if player_id in self.player1.values():
+            return True
+        else:
+            return False
+    def is_player2(self, player_id: int) -> bool:
+        if player_id in self.player2.values():
+            return True
+        else:
+            return False
+    def set_turn(self, player_id: int, turn: str):
+        if self.is_player1(player_id):
+            self.player1.update(turn=turn)
+            if self.is_solo:
+                self.player2.update(turn=get_bot_choice())
+        if self.is_player2(player_id):
+            self.player2.update(turn=turn)
+        if 'turn' in self.player1 and 'turn' in self.player2:
+            self.both_turn = True
+        self.markup = InlineKeyboardMarkup(
+            inline_keyboard=[
+                buttons_dict['rock'],
+                buttons_dict['scissors'],
+                buttons_dict['paper'],
+                buttons_dict['score_tab'],
+                buttons_dict['cancel_game']
+            ]
+        )
+        self.caption = self.get_caption()
+    def get_turn(self, player_id: int) -> str:
+        cur_player_num = self.get_player_num(player_id)
+        if cur_player_num == 'player1' and 'turn' in self.player1:
+            return self.player1['turn']
+        if cur_player_num == 'player2' and 'turn' in self.player2:
+            return self.player2['turn']
+        return ""
+    def get_player1_status(self) -> str:
+        player1 = ""
+        waiting_invite = LEXICON_RU['waiting_for_accept_invite']
+        turn_done = LEXICON_RU['turn_done']
+        thinking = LEXICON_RU['thinking']
+        result = ""
+        if 'username' in self.player1:
+            player1 = self.player1['username']
+            result = f"Игрок 1:\n{player1}\n\n"
+        else:
+            result = f"Игрок 1:\n\t{waiting_invite}"
+        if 'turn' in self.player1:
+            player1 = self.player1['username']
+            result = f"Игрок 1: \n{player1}\t{turn_done}\t\n\n"
+        elif 'turn' in self.player2:
+            result = f"Игрок 1: \n{player1}\t{thinking}\t\n\n"
+        return result
+    def get_player2_status(self) -> str:
+        player2 = ""
+        waiting_invite = LEXICON_RU['waiting_for_accept_invite']
+        turn_done = LEXICON_RU['turn_done']
+        thinking = LEXICON_RU['thinking']
+        result = ""
+        if "username" in self.player2:
+            player2 = self.player2['username']
+            result = f"Игрок 2:\n{player2}"
+        else:
+            result = f"Игрок 2:\n\t{waiting_invite}"
+        if "turn" in self.player2:
+            player2 = self.player2['username']
+            result = f"Игрок 2: \n{player2}\t{turn_done}\t"
+        elif 'turn' in self.player1:
+            result = f"Игрок 2: \n{player2}\t{thinking}\t"
+        return result
+    def get_caption(self) -> str:
+        if self.both_turn:
+            return self.get_winner_caption()
+        title = f"{LEXICON_RU['s_title']}\t\t\nРаунд {self.turn_in_row}"
+        return f"{title}\n\n{self.get_player1_status()}{self.get_player2_status()}"
+    def get_winner_caption(self) -> str:
+        loc = LEXICON_RU
+        rules = {'rock': 'scissors',
+                 'scissors': 'paper',
+                 'paper': 'rock'}
+        self.markup = InlineKeyboardMarkup(
+            inline_keyboard=[
+                buttons_dict['rock'],
+                buttons_dict['scissors'],
+                buttons_dict['paper'],
+                buttons_dict['score_tab'],
+                buttons_dict['cancel_game']
+            ]
+        )
+        if self.player1['id'] not in db_users[self.player2['id']]['opponents'].values():
+            create_opponent(self.player1['id'], self.player2['id'])
+        p1_turn = LEXICON_RU[self.player1.get('turn')]
+        p2_turn = LEXICON_RU[self.player2.get('turn')]
+        p1_id = self.player1['id']
+        p2_id = self.player2['id']
+        p1_name = str(self.player1.get('username'))
+        p2_name = str(self.player2.get('username'))
+        href1 = f'<b><a href=\"tg://user?id={p1_id}\">{p1_name}</a></b>'
+        href2 = f'<b><a href=\"tg://user?id={p2_id}\">{p2_name}</a></b>'
+        serial = f'<b>{loc['s_title']}\n{loc['round']} {self.turn_in_row}\n</b>'
+        player1_str = f'\n{loc['player1']}:\n'
+        player1_turn = f'{href1}\t-\t{p1_turn}'
+        player2_str = f'\n\n{loc['player2']}:\n'
+        player2_turn = f'{href2}\t-\t{p2_turn}'
+        res = serial
+        if p1_turn == p2_turn:
+            self.update_room_results(True, self.player1['id'], self.player2['id'])
+            res += player1_str + loc['draw_icon'] + player1_turn + player2_str + loc['draw_icon'] + player2_turn
+            return res
+        elif rules[self.player1['turn']] == self.player2['turn']:
+            self.update_room_results(False, self.player1['id'], self.player2['id'])
+            res += player1_str + loc['cup'] + player1_turn + player2_str + loc['loss'] + player2_turn
+            return res
+        else:
+            self.update_room_results(False, self.player2['id'], self.player1['id'])
+            res += player1_str + loc['loss']  + player1_turn + player2_str + loc['cup'] + player2_turn
+            return res
+    def show_room_stats(self):
+        x = (f"В этой комнате всего сыграно {self.total_matches} игр\n\n"
+                        f"Счёт игроков комнаты: \n")
+        for player in self.players_list:
+            if player not in self.players_wins:
+                self.players_wins.update({player: 0})
+            href = f'<b><a href=\"tg://user?id={player}\">{get_username(player)}</a></b>'
+            x += f"{href}\t{self.players_wins[player]}\n"
+        x += f"В ничью:\t{self.draws}\n"
+        self.markup = InlineKeyboardMarkup(
+            inline_keyboard=[
+                buttons_dict['back_to_game'],
+                buttons_dict['cancel_game']
+            ]
+        )
+        self.stats = x
+    def returning_to_game(self):
+        self.caption = self.get_caption()
+        self.markup = InlineKeyboardMarkup(
+            inline_keyboard=[
+                buttons_dict['rock'],
+                buttons_dict['scissors'],
+                buttons_dict['paper'],
+                buttons_dict['score_tab'],
+                buttons_dict['cancel_game']
+            ]
+        )
+    def update_room_results(self, draw: bool, player1_id: int, player2_id: int) -> Any:
+        if draw:
+            self.draws += 1
+        else:
+            if player1_id not in self.players_wins:
+                self.players_wins.update({player1_id: 0})
+            score = self.players_score.get(player1_id) + 1
+            wins = self.players_wins.get(player1_id) + 1
+            self.players_score.update({player1_id: score})
+            self.players_wins.update({player1_id: wins})
+        self.turn_in_row += 1
+        self.total_matches += 1
+        self.both_turn = False
+        self.player1.pop('turn')
+        self.player2.pop('turn')
+    def get_total(self):
+        print(self.room_id)
+</file>
+
+<file path="lexicon/lexicon_ru.py">
+LEXICON_RU: dict[str, str] = {
+    '/start': '<b>Привет!</b>\nДавай с тобой сыграем в игру '
+              '"<b>Камень</b>, <b>ножницы</b>, <b>бумага</b>"?',
+    '/help': '<b>Это очень простая игра!</b>\nИгроки должны '
+             'сделать выбор одного из трех предметов: <b>камень</b>, '
+             '<b>ножницы</b> или <b>бумага</b>.\n\nЕсли выбор игроков '
+             'совпадает - <b>ничья</b>\nВ остальных случаях <b>камень</b> '
+             'побеждает <b>ножницы</b>, <b>ножницы</b> побеждают <b>бумагу</b>, '
+             'а <b>бумага</b> побеждает <b>камень</b>.\n\n<b>Играем?</b>',
+    'try_again_invite': "Попробовать пригласить снова",
+    'start_solo_btn': "Начать игру с ботом",
+    'start_duo_btn': "Начать игру с другом",
+    'invite_sfriend_btn': "Пригласить сыграть другого друга",
+    'accept_game_btn': 'Принять игру',
+    'contact_btn': 'Связаться со мной',
+    'rock_btn': 'Камень 🗿',
+    'paper_btn': 'Бумага 📜',
+    'scissors_btn': 'Ножницы ✂',
+    'rock': 'Камень 🗿',
+    'paper': 'Бумага 📜',
+    'scissors': 'Ножницы ✂',
+    'cancel_game_btn': 'Отменить игру',
+    'show_tab_btn': 'Статистика комнаты',
+    'accept_from_btn': 'Принять игру от ',
+    'back_to_game_btn': 'Вернуться к игре',
+    'rock_s': '🗿',
+    'paper_s': '📜',
+    'scissors_s': '✂',
+    'yes_button': 'Давай!',
+    'no_button': 'Не хочу!',
+    'other_answer': 'Извини, увы, это сообщение мне непонятно...',
+    'yes': 'Отлично! Делай свой выбор!',
+    'no': 'Жаль...\nЕсли захочешь сыграть, просто разверни '
+          'клавиатуру и нажми кнопку "Давай!"',
+    'bot_won': 'Я победил!\n\nСыграем еще?',
+    'user_won': 'Ты победил! Поздравляю!\n\nДавай сыграем еще?',
+    'nobody_won': 'Ничья!\n\nПродолжим?',
+    'bot_choice': 'Мой выбор',
+    'but_1': 'Кнопка 1',
+    'but_2': 'Кнопка 2',
+    'but_3': 'Кнопка 3',
+    'but_4': 'Кнопка 4',
+    'but_5': 'Кнопка 5',
+    'but_6': 'Кнопка 6',
+    'but_7': 'Кнопка 7',
+    'deny_anonymous_start': 'К сожалению, <b>Telegram API</b>\n'
+                            'не позволяет\n'
+                            'отслеживать сообщения,\n'
+                            'отправленные <b>анонимно</b>.\n\n'
+                            'Отправляйте пожалуйста запросы от своего имени!\n\n'
+                            'Для этого достаточно в настройках группы\n'
+                            'убрать галочку <b>\"Оставаться анонимным\"</b> в правах администратора.',
+    ''
+    'deny_double_invite': 'Вы уже отправили приглашение поиграть, ожидайте противника',
+    'deny_double_turn': 'Вы уже сделали свой ход, ожидайте хода противника',
+    'deny_show_tab': 'Статистику комнаты могут просматривать только игроки этой комнаты',
+    'deny_back_to_game': 'Доступно только для игроков',
+    'create_game': 'Начать матч',
+    'waiting_for_accept_invite': 'Ожидаем ответа противника...',
+    's_title': '<b>Камень! Ножницы! Бумага!</b>',
+    'title': 'Камень! Ножницы! Бумага!',
+    's_description': 'Нажми, чтобы предложить другу сыграть в игру',
+    'invite_friend': "Пригласить сыграть друга",
+    'but_info': 'Кнопки теперь обрабатывают нажатие',
+    'register': 'Начни игру!',
+    'inline_menu': 'Выбери опцию',
+    'turn_done': 'Сделал ход',
+    'thinking': 'Думает...',
+    'non_admitted_turn': 'Вы не участвуете в этом матче',
+    'suggestion_title': 'Контакт разработчика',
+    'suggestion_description': 'Предложить изменения...',
+    'suggestion_contact': 'Принимаю предложения\n @SurtRed',
+    'deny_cancelling_their': 'Вы не можете отменить чужую игру',
+    'empty_table': 'В таблице пока нет записей',
+    'session members': 'Участники этой игры',
+    'cancelling_game': 'отменил текущую игру\n\nВы можете начать новую!',
+    'solo_do_turn': '\t cделай свой ход',
+    'ready': '✅',
+    'hm': '🤔',
+    'player1': '<b>Игрок 1</b>',
+    'player2': '<b>Игрок 2</b>',
+    'cup': '🏆',
+    'loss': '😔',
+    'draw': '<b>Ничья!</b>',
+    'draw_icon': '🤷‍♂️',
+    'round': 'Раунд'
+}
+LEXICON_RU_COMMANDS: dict[str, str] = {
+    '/start': 'Начать игру',
+    '/help': 'Справка по работе бота',
+}
+</file>
+
+<file path=".github/workflows/main.yml">
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+jobs:
+  run_pull:
+    name: run pull
+    runs-on: ubuntu-latest
+    steps:
+    - name: install ssh keys
+      run: |
+        install -m 600 -D /dev/null ~/.ssh/id_rsa
+        cat ~/.ssh/id_rsa
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        cat ~/.ssh/id_rsa >> key.pem
+        chmod 600 key.pem
+        ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
+    - name: connect
+      run: ssh -tt -i key.pem -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.WORK_DIR }} && git checkout ${{ secrets.MAIN_BRANCH }} && git pull && exit"
+    - name: cleanup
+      run: rm -rf ~/.ssh
+</file>
+
+<file path="middlewares/outer.py">
+import logging
+import time
+from datetime import datetime
+from typing import Any, Awaitable, Callable, Dict
+import json
+from aiogram.types import CallbackQuery, Message, InlineQuery, ChosenInlineResult
+from aiogram import BaseMiddleware
+from services.middleware_tools import get_event_content_type, output_rooms_infos
+from BD.rooms import db_obj_rooms
+from lexicon.lexicon_ru import LEXICON_RU_COMMANDS
+logger = logging.getLogger(__name__)
+class OuterMessageMiddleware(BaseMiddleware):
+    async def __call__(
+        self,
+        handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
+        event: Message,
+        data: Dict[str, Any]
+    ) -> Any:
+        ev = event.model_dump()
+        ev_json = json.dumps(event.model_dump(exclude_unset=True, exclude_defaults=True), indent=3)
+        event_name = event.__class__.__name__
+        event_content_type = event.content_type.__dict__["_value_"]
+        date_time = ev["date"]
+        reg_date_time = time.localtime(float(date_time))
+        print_time = time.strftime("%B %d %Y at %H:%M:%S", reg_date_time)
+        logger.debug(
+            '\n\t\t\t\t\t\t\t время апдейта:\t\t\t\t%s\n\t\t\t\t\t\t\t тип апдейта:\t\t\t\t%s'
+            '\n\t\t\t\t\t\t\t тип контента:\t\t\t\t%s\n'
+            '\n\t\t\t\t\t\t\t весь апдейт:\n\t\t\t\t\t\t\t%s',
+            print_time,
+            event_name,
+            event_content_type,
+            ev_json
+        )
+        get_event_content_type(event_content_type, ev)
+        result = await handler(event, data)
+        try:
+            dic=db_obj_rooms[str(event.chat.id)+str(event.message_id+1)].__dict__
+            output_rooms_infos(dic)
+        except KeyError:
+            logger.debug("Этот Message не относится к созданию новой комнаты")
+        else:
+            pass
+        logger.debug("Вышли")
+        return result
+class OuterCallbackMiddleware(BaseMiddleware):
+    async def __call__(
+        self,
+        handler: Callable[[CallbackQuery, Dict[str, Any],], Awaitable[Any]],
+        event: CallbackQuery,
+        data: Dict[str, Any],
+    ) -> Any:
+        ev_json = json.dumps(event.model_dump(exclude_unset=True, exclude_defaults=True), indent=3)
+        event_name = event.__class__.__name__
+        ev_time = datetime.now()
+        logger.debug(
+            '\n\t\t\t\t\t\t\t время апдейта:\t\t\t\t%s\n\t\t\t\t\t\t\t тип апдейта:\t\t\t\t%s'
+            '\n\t\t\t\t\t\t\t данные нажатия:\t\t\t%s\n\t\t\t\t\t\t\t кто нажал:\t\t\t\t\t%s\t%s'
+            '\n\t\t\t\t\t\t\t Весь апдейт:\n%s',
+            ev_time,
+            event_name,
+            event.data,
+            event.from_user.username,
+            event.from_user.id,
+            ev_json
+        )
+        result = await handler(event, data)
+        try:
+            dic=db_obj_rooms[event.inline_message_id].__dict__
+            output_rooms_infos(dic)
+        except KeyError:
+            try:
+                dic = db_obj_rooms[str(event.message.chat.id)+str(event.message.message_id)].__dict__
+                output_rooms_infos(dic)
+            except AttributeError:
+                logger.debug('Кажется, кто-то использовал инлайн анонимно')
+            else:
+                pass
+        else:
+            pass
+        return result
+class OuterInlineMiddleware(BaseMiddleware):
+    async def __call__(
+        self,
+        handler: Callable[[InlineQuery, Dict[str, Any]], Awaitable[Any]],
+        event: InlineQuery,
+        data: Dict[str, Any]
+    ) -> Any:
+        ev_json = json.dumps(event.model_dump(), indent=3)
+        event_name = event.__class__.__name__
+        ev_time = datetime.now()
+        logger.debug(
+            '\n\t\t\t\t\t\t\t время апдейта:\t\t\t\t%s\n\t\t\t\t\t\t\t тип апдейта:\t\t\t\t%s'
+            '\n\t\t\t\t\t\t\t данные нажатия:\t\t\t%s\n\t\t\t\t\t\t\t кто нажал:\t\t\t\t\t%s\t%s'
+            '\n\t\t\t\t\t\t\t Весь апдейт:\n%s',
+            ev_time,
+            event_name,
+            event.query,
+            event.from_user.username,
+            event.from_user.id,
+            ev_json
+        )
+        result = await handler(event, data)
+        logger.debug("Вышли")
+        return result
+class OuterResultMiddleware(BaseMiddleware):
+    async def __call__(
+        self,
+        handler: Callable[[ChosenInlineResult, Dict[str, Any]], Awaitable[Any]],
+        event: ChosenInlineResult,
+        data: Dict[str, Any]
+    ) -> Any:
+        ev_json = json.dumps(event.model_dump(), indent=3)
+        event_name = event.__class__.__name__
+        ev_time = datetime.now()
+        logger.debug(
+            '\n\t\t\t\t\t\t\t время апдейта:\t\t\t\t%s\n\t\t\t\t\t\t\t выбранный результат:\t\t%s'
+            '\n\t\t\t\t\t\t\t тип апдейта:\t\t\t\t%s'
+            '\n\t\t\t\t\t\t\t Весь апдейт:\n%s',
+            ev_time,
+            event.query,
+            event_name,
+            ev_json
+        )
+        result = await handler(event, data)
+        try:
+            dic=db_obj_rooms[event.inline_message_id].__dict__
+        except KeyError:
+            logger.debug("Этот ChosenInlineResult не относится к созданию новой комнаты")
+        else:
+            output_rooms_infos(dic)
+        logger.debug("Вышли")
+        return result
+</file>
+
+</files>

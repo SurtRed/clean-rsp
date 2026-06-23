@@ -63,7 +63,7 @@ async def main():
     finally:
         await pool.close()
         logger.info('Pool closed')
-
+        
 
 if __name__ == '__main__':
     # Запускаем асинхронную функцию main
